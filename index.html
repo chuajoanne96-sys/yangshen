@@ -654,6 +654,9 @@ let winnerAudio = null;
 let musicEnabled = true;
 let musicVolume = 0.3;
 let musicStarted = false;
+// ⭐ 记录中奖音效播放状态，用于自动结束
+let winnerSoundTimer = null;
+
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let sfxGainNode = null;
@@ -679,6 +682,32 @@ function loadUserAudio() {
   winnerAudio = new Audio('music 2.mp3');
   winnerAudio.volume = 0.9;
   winnerAudio.addEventListener('error', () => { winnerAudio = null; });
+
+  // ⭐ 中奖音效播放完毕后，自动恢复背景音乐并结束中奖展示
+  winnerAudio.addEventListener('ended', () => {
+    console.log('🎵 中奖音效播放完毕，自动恢复背景音乐');
+    if (winnerSoundTimer) {
+      clearTimeout(winnerSoundTimer);
+      winnerSoundTimer = null;
+    }
+    finishWinnerDisplay();
+  });
+}
+
+// ⭐ 结束中奖展示：隐藏浮层、恢复 music1
+function finishWinnerDisplay() {
+  if (state !== 'STOPPED') return;
+  console.log('🏁 结束中奖展示，准备下一轮');
+  winnerOverlay.classList.remove('show');
+  winnerLocked = false;
+  state = 'IDLE';
+
+  // 恢复背景音乐
+  if (bgmAudio && musicEnabled) {
+    bgmAudio.play().catch(e => console.warn(e));
+  } else if (!bgmAudio) {
+    startSynthBackgroundMusic();
+  }
 }
 
 function startBackgroundMusic() {
@@ -731,11 +760,20 @@ function stopSynthBackgroundMusic() {
 
 function playWinnerSound() {
   if (!musicEnabled) return;
+  // ⭐ 播放前确保背景音乐已经停止
+  if (bgmAudio) bgmAudio.pause();
+  stopSynthBackgroundMusic();
+
   if (winnerAudio) {
     winnerAudio.currentTime = 0;
     winnerAudio.play().catch(() => playSynthWinnerSound());
   } else {
     playSynthWinnerSound();
+    // 合成音效约 2.4 秒后自动结束
+    if (winnerSoundTimer) clearTimeout(winnerSoundTimer);
+    winnerSoundTimer = setTimeout(() => {
+      finishWinnerDisplay();
+    }, 2400);
   }
 }
 
@@ -854,6 +892,10 @@ function stopImmediately() {
   winnerLocked = true;
   playSfx('impact');
 
+  // ⭐ 抽奖停止瞬间，立即停止背景音乐 music1
+  if (bgmAudio) bgmAudio.pause();
+  stopSynthBackgroundMusic();
+
   const winner = determineWinnerFromPosition();
   if (winner) {
     setTimeout(() => {
@@ -861,6 +903,7 @@ function stopImmediately() {
       winnerName.textContent = winner.prize.name;
       winnerOverlay.classList.add('show');
       createConfetti();
+      // ⭐ 播放中奖音效 music2（此时 music1 已停止）
       playWinnerSound();
     }, 150);
   }
@@ -885,7 +928,7 @@ function determineWinnerFromPosition() {
 
   if (!closestCard) return null;
   const prizeId = parseInt(closestCard.dataset.prizeId, 10);
-  const prize = prizes.find(p => p.id === prizeId) || prizes;
+  const prize = prizes.find(p => p.id === prizeId) || prizes[0];
   return { cardElement: closestCard, prize };
 }
 
@@ -904,13 +947,48 @@ function createConfetti() {
   }
 }
 
+// ⭐ 核心按键逻辑
 function handleSpace() {
+  console.log('SPACE pressed, 当前状态:', state);
+
   if (!musicStarted) {
     hideAudioHint();
   }
-  if (state === 'IDLE' || state === 'STOPPED') {
+
+  // ⭐ 关键：按下 SPACE 时，无论什么状态，都先立即停止 music2
+  if (winnerAudio) {
+    winnerAudio.pause();
+    winnerAudio.currentTime = 0;
+  }
+  if (winnerSoundTimer) {
+    clearTimeout(winnerSoundTimer);
+    winnerSoundTimer = null;
+  }
+
+  // 如果正在中奖展示中，按下 SPACE 立即结束并开始新一轮
+  if (state === 'STOPPED') {
+    console.log('⏹️ 手动结束中奖展示，立即开始新一轮');
+    // 隐藏中奖浮层
+    winnerOverlay.classList.remove('show');
+    winnerLocked = false;
+    // 恢复背景音乐
+    if (bgmAudio && musicEnabled) {
+      bgmAudio.play().catch(e => console.warn(e));
+    } else if (!bgmAudio) {
+      startSynthBackgroundMusic();
+    }
+    // 立即开始新一轮
+    state = 'IDLE';
     startRunning();
-  } else if (state === 'RUNNING') {
+    return;
+  }
+
+  // 空闲状态 → 开始抽奖
+  if (state === 'IDLE') {
+    startRunning();
+  }
+  // 滚动中 → 立即停止
+  else if (state === 'RUNNING') {
     stopImmediately();
   }
 }
@@ -950,17 +1028,26 @@ musicControl.addEventListener('click', () => {
   if (musicEnabled) {
     musicIcon.textContent = '🎵';
     musicText.textContent = '音乐开';
-    startBackgroundMusic();
+    // 如果正在中奖展示中，不打断 music2
+    if (state !== 'STOPPED') {
+      startBackgroundMusic();
+    }
   } else {
     musicIcon.textContent = '🔇';
     musicText.textContent = '音乐关';
     pauseBackgroundMusic();
+    // ⭐ 同时停止中奖音效
+    if (winnerAudio) {
+      winnerAudio.pause();
+      winnerAudio.currentTime = 0;
+    }
   }
 });
 
 volumeSlider.addEventListener('input', (e) => {
   musicVolume = e.target.value / 100;
   if (bgmAudio) bgmAudio.volume = musicVolume;
+  if (winnerAudio) winnerAudio.volume = Math.min(1, musicVolume * 3);
   if (sfxGainNode) sfxGainNode.gain.value = musicVolume;
 });
 
