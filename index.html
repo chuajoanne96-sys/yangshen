@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>续命养身市集 · 义诊抽奖</title>
+  <title>续命养身市集 · 抽奖</title>
   <style>
     /* ========== 全局重置 ========== */
     * {
@@ -128,48 +128,6 @@
     .scroll-decoration::before { left: 5%; }
     .scroll-decoration::after { right: 5%; }
 
-    /* ========== 灯笼 ========== */
-    .lantern {
-      position: fixed;
-      top: -10px;
-      width: 48px;
-      height: 68px;
-      background: radial-gradient(circle at 50% 40%, #ffd966, #c0392b);
-      border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%;
-      box-shadow: 0 0 35px #ffb347, inset 0 -8px 12px rgba(0, 0, 0, 0.3);
-      z-index: 3;
-      pointer-events: none;
-      animation: sway 5s ease-in-out infinite alternate;
-      transform-origin: top center;
-    }
-    .lantern::after {
-      content: "";
-      position: absolute;
-      bottom: -12px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 5px;
-      height: 22px;
-      background: #b8860b;
-      border-radius: 2px;
-      box-shadow: 0 0 12px #ffd966;
-    }
-    .lantern::before {
-      content: "";
-      position: absolute;
-      top: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 18px;
-      height: 10px;
-      background: #8b6b3d;
-      border-radius: 4px;
-    }
-    @keyframes sway {
-      0% { transform: rotate(-5deg); }
-      100% { transform: rotate(5deg); }
-    }
-
     /* ========== 主容器 ========== */
     .draw-container {
       position: relative;
@@ -206,20 +164,6 @@
       line-height: 1.15;
       filter: drop-shadow(0 0 20px rgba(200, 160, 80, 0.5));
     }
-    .main-title .seal {
-      display: inline-block;
-      background: #8b1e1e;
-      color: #f5e9d8;
-      font-size: 0.35em;
-      padding: 0.2em 0.5em;
-      border-radius: 8px;
-      vertical-align: middle;
-      margin: 0 0.2em;
-      letter-spacing: 0.1em;
-      box-shadow: 0 0 15px rgba(200, 50, 50, 0.6);
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    /* 标签：字体大小调整至与原来的“福气满满”一致 */
     .market-tag {
       display: inline-block;
       margin-top: 0.5em;
@@ -462,7 +406,7 @@
       pointer-events: none;
       background: radial-gradient(circle at center, rgba(212, 175, 55, 0.2) 0%, transparent 70%);
       opacity: 0;
-      transition: opacity 0.3s;
+      transition: opacity 0.4s;
     }
     .winner-overlay.show {
       opacity: 1;
@@ -692,19 +636,10 @@
   <!-- 竹简 -->
   <div class="scroll-decoration"></div>
 
-  <!-- 灯笼 -->
-  <div class="lantern" style="left: 5%; animation-delay: 0s;"></div>
-  <div class="lantern" style="left: 16%; animation-delay: 0.8s; width: 52px; height: 72px;"></div>
-  <div class="lantern" style="left: 84%; animation-delay: 0.4s;"></div>
-  <div class="lantern" style="left: 95%; animation-delay: 1.2s; width: 44px; height: 64px;"></div>
-
   <!-- 主界面 -->
   <div class="draw-container">
     <div class="header">
-      <div class="main-title">
-        <span class="seal">义</span> 续命养身市集 <span class="seal">诊</span>
-      </div>
-      <!-- 只保留“现场专属好礼”，字体大小与原来的“福气满满”一致 -->
+      <div class="main-title">续命养身市集</div>
       <div class="market-tag">🎁 现场专属好礼 🎁</div>
     </div>
 
@@ -788,6 +723,8 @@
       let musicEnabled = true;
       let musicVolume = 0.3;
       let musicStarted = false;
+      // 中奖音效播放完毕后的定时器句柄（用于清理）
+      let winnerEndTimer = null;
 
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       let audioCtx = null;
@@ -818,6 +755,45 @@
         winnerAudio.preload = 'auto';
         winnerAudio.addEventListener('canplaythrough', () => console.log('✅ 中奖音效已加载'));
         winnerAudio.addEventListener('error', () => { winnerAudio = null; });
+
+        // ⭐ 关键新增：中奖音效播放完毕后自动结束中奖展示
+        winnerAudio.addEventListener('ended', () => {
+          console.log('🎵 中奖音效播放完毕，自动结束中奖展示');
+          // 延迟一点点再隐藏，让最后一个音符自然收尾
+          if (winnerEndTimer) clearTimeout(winnerEndTimer);
+          winnerEndTimer = setTimeout(() => {
+            finishWinnerDisplay();
+          }, 300);
+        });
+      }
+
+      // ==================== 结束中奖展示（自动或手动） ====================
+      function finishWinnerDisplay() {
+        // 如果当前不是中奖展示状态，就什么都不做
+        if (state !== 'STOPPED' && state !== 'WINNER_DISPLAY') return;
+
+        console.log('🏁 结束中奖展示，准备下一轮');
+        // 隐藏中奖浮层
+        winnerOverlay.classList.remove('show');
+
+        // 清除奖品卡片上的高亮
+        document.querySelectorAll('.prize-card').forEach(c => {
+          c.style.boxShadow = '';
+          c.style.borderColor = '';
+          c.style.transform = '';
+        });
+        winningZone.classList.remove('active');
+
+        // 重置为中奖前的可开始状态
+        winnerLocked = false;
+        state = 'IDLE';
+
+        // 恢复背景音乐
+        if (bgmAudio && musicEnabled) {
+          bgmAudio.play().catch(e => console.warn(e));
+        } else if (!bgmAudio) {
+          startSynthBackgroundMusic();
+        }
       }
 
       // ==================== 背景音乐 ====================
@@ -971,7 +947,13 @@
           winnerAudio.currentTime = 0;
           winnerAudio.play().catch(() => playSynthWinnerSound());
         } else {
+          // 没有文件时用合成音效，需要手动控制结束时间
           playSynthWinnerSound();
+          // 合成音效大约 2.4 秒播放完，安排自动结束
+          if (winnerEndTimer) clearTimeout(winnerEndTimer);
+          winnerEndTimer = setTimeout(() => {
+            finishWinnerDisplay();
+          }, 2600);
         }
       }
 
@@ -1158,6 +1140,7 @@
         state = 'STOPPED';
         winnerLocked = true;
 
+        // 停止背景音乐
         if (bgmAudio) bgmAudio.pause();
         stopSynthBackgroundMusic();
 
@@ -1244,29 +1227,28 @@
           startBackgroundMusic();
         }
 
-        if (bgmAudio && bgmAudio.paused && musicEnabled && state !== 'RUNNING') {
-          bgmAudio.play().catch(e => console.warn(e));
-        }
-
+        // ⭐ 如果中奖音效还在播放，按下 SPACE 直接结束（可选：也可以忽略按键）
+        // 这里采用直接结束中奖展示的方式，让用户有控制权
         if (state === 'WINNER_DISPLAY') return;
 
-        if (state === 'IDLE' || state === 'STOPPED') {
-          if (state === 'STOPPED') {
-            winnerLocked = false;
-            winnerOverlay.classList.remove('show');
-            document.querySelectorAll('.prize-card').forEach(c => {
-              c.style.boxShadow = '';
-              c.style.borderColor = '';
-              c.style.transform = '';
-            });
-            winningZone.classList.remove('active');
-
-            if (bgmAudio && musicEnabled) {
-              bgmAudio.play().catch(e => console.warn(e));
-            } else if (!bgmAudio) {
-              startSynthBackgroundMusic();
-            }
+        // 如果当前是 STOPPED（中奖展示中），按 SPACE 直接跳过并开始新一轮
+        if (state === 'STOPPED') {
+          // 先结束中奖展示（停止音效，清理定时器）
+          if (winnerAudio) {
+            winnerAudio.pause();
+            winnerAudio.currentTime = 0;
           }
+          if (winnerEndTimer) {
+            clearTimeout(winnerEndTimer);
+            winnerEndTimer = null;
+          }
+          finishWinnerDisplay();
+          // 然后立即开始新一轮
+          startRunning();
+          return;
+        }
+
+        if (state === 'IDLE') {
           startRunning();
         } else if (state === 'RUNNING') {
           stopImmediately();
@@ -1314,7 +1296,10 @@
           musicIcon.textContent = '🎵';
           musicText.textContent = '音乐开';
           musicControl.classList.remove('off');
-          startBackgroundMusic();
+          // 如果正在中奖展示中，不打断
+          if (state !== 'STOPPED') {
+            startBackgroundMusic();
+          }
         } else {
           musicIcon.textContent = '🔇';
           musicText.textContent = '音乐关';
@@ -1348,8 +1333,8 @@
         createHerbs();
         loadUserAudio();
         state = 'IDLE';
-        console.log('🏮 续命养身市集 · 义诊抽奖系统已就绪');
-        console.log('📁 背景图片: background new.jpg');
+        console.log('🏮 续命养身市集 · 抽奖系统已就绪');
+        console.log('📁 背景图片: background new.gif');
         console.log('🎵 背景音乐: music1.mp3');
         console.log('🎺 中奖音效: music 2.mp3');
         window.addEventListener('keydown', (e) => {
