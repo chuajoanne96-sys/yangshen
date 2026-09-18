@@ -1,1355 +1,842 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>续命养身市集 · 抽奖</title>
-  <style>
-    /* ========== 全局重置 ========== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      user-select: none;
-    }
-    body {
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
-      font-family: 'STKaiti', 'KaiTi', '楷体', 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
-      background: #2b1a0f;
-      color: #f5e9d8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>续命养身市集 · 抽奖系统</title>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+  background: #2b1a0f;
+  color: #f5e9d8;
+  overflow: hidden;
+  min-height: 100vh;
+  user-select: none;
+}
 
-    /* ========== 背景 ========== */
-    .stage-bg {
-      position: fixed;
-      inset: 0;
-      background-image: url('background new.gif');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-color: #2b1a0f;
-      z-index: 0;
-    }
-    .bg-overlay {
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse at 30% 20%, rgba(210, 170, 100, 0.2) 0%, transparent 60%),
-        radial-gradient(ellipse at 70% 80%, rgba(180, 120, 60, 0.15) 0%, transparent 60%),
-        linear-gradient(180deg, rgba(43, 26, 15, 0.55) 0%, rgba(43, 26, 15, 0.35) 50%, rgba(43, 26, 15, 0.6) 100%);
-      z-index: 1;
-      pointer-events: none;
-    }
-    .paper-texture {
-      position: fixed;
-      inset: 0;
-      background-image:
-        radial-gradient(circle at 20% 30%, rgba(200, 160, 100, 0.06) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(180, 130, 70, 0.05) 0%, transparent 50%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      z-index: 1;
-      pointer-events: none;
-    }
-    .ink-glow {
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(circle at 50% 40%, rgba(200, 160, 80, 0.12) 0%, transparent 55%),
-        radial-gradient(circle at 50% 80%, rgba(150, 100, 50, 0.08) 0%, transparent 60%);
-      z-index: 1;
-      pointer-events: none;
-      animation: inkPulse 8s ease-in-out infinite;
-    }
-    @keyframes inkPulse {
-      0%, 100% { opacity: 0.7; }
-      50% { opacity: 1; }
-    }
-    .cabinet-pattern {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      opacity: 0.04;
-      background-image:
-        linear-gradient(90deg, transparent 49%, rgba(200, 160, 80, 0.5) 49%, rgba(200, 160, 80, 0.5) 51%, transparent 51%),
-        linear-gradient(0deg, transparent 49%, rgba(200, 160, 80, 0.5) 49%, rgba(200, 160, 80, 0.5) 51%, transparent 51%);
-      background-size: 60px 60px;
-    }
+/* ========== 背景与装饰 ========== */
+.stage-bg {
+  position: fixed;
+  inset: 0;
+  background: url('background new.gif') center/cover no-repeat #2b1a0f;
+  z-index: 1;
+}
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(43,26,15,0.3) 0%, rgba(20,10,5,0.85) 100%);
+  z-index: 2;
+}
+.paper-texture {
+  position: fixed;
+  inset: 0;
+  opacity: 0.12;
+  background-image: radial-gradient(#d4af37 1px, transparent 0);
+  background-size: 24px 24px;
+  z-index: 3;
+  pointer-events: none;
+}
+.scroll-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  background: linear-gradient(180deg, #8b6b3d, #6b4e2a, #4a351a);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(255,200,100,0.2);
+  z-index: 5;
+  pointer-events: none;
+}
+.scroll-decoration::before, .scroll-decoration::after {
+  content: "❖";
+  position: absolute;
+  top: -6px;
+  color: #d4a017;
+  font-size: 22px;
+  text-shadow: 0 0 10px #d4a017;
+}
+.scroll-decoration::before { left: 5%; }
+.scroll-decoration::after { right: 5%; }
 
-    /* ========== 漂浮意象粒子 ========== */
-    .herb-particles {
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .herb {
-      position: absolute;
-      font-size: 1.2rem;
-      opacity: 0.25;
-      animation: floatHerb linear infinite;
-      filter: drop-shadow(0 0 6px rgba(200, 160, 80, 0.5));
-    }
-    @keyframes floatHerb {
-      0% { transform: translateY(110vh) rotate(0deg) scale(0.6); opacity: 0; }
-      10% { opacity: 0.35; }
-      90% { opacity: 0.35; }
-      100% { transform: translateY(-20vh) rotate(360deg) scale(1.1); opacity: 0; }
-    }
+.herb-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+.herb {
+  position: absolute;
+  color: rgba(212,175,55,0.6);
+  opacity: 0.7;
+  animation: floatHerb 15s linear infinite;
+}
+@keyframes floatHerb {
+  0% { transform: translateY(105vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
 
-    /* ========== 顶部竹简 ========== */
-    .scroll-decoration {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 12px;
-      background: linear-gradient(180deg, #8b6b3d, #6b4e2a, #4a351a);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6), inset 0 -2px 4px rgba(255, 200, 100, 0.2);
-      z-index: 5;
-      pointer-events: none;
-    }
-    .scroll-decoration::before,
-    .scroll-decoration::after {
-      content: "❖";
-      position: absolute;
-      top: -6px;
-      color: #d4a017;
-      font-size: 22px;
-      text-shadow: 0 0 10px #d4a017;
-    }
-    .scroll-decoration::before { left: 5%; }
-    .scroll-decoration::after { right: 5%; }
+/* ========== 主容器 ========== */
+.draw-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 1700px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5vh 2vw 2vh;
+  margin: 0 auto;
+}
 
-    /* ========== 主容器 ========== */
-    .draw-container {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 1700px;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.5vh 2vw 2vh;
-    }
+/* ========== 头部 ========== */
+.header {
+  text-align: center;
+  width: 100%;
+  margin-top: 1vh;
+  position: relative;
+}
+.main-title {
+  font-size: clamp(2.2rem, 6.5vw, 5rem);
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  line-height: 1.15;
+  font-family: 'STKaiti', 'KaiTi', '楷体', serif;
+  background: linear-gradient(180deg, #fff8dc 0%, #ffe9a7 20%, #f7c948 45%, #d4a017 65%, #b8860b 80%, #8b6508 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 -1px 0 rgba(255, 255, 220, 0.9), 0 1px 0 #b8860b, 0 3px 0 #8b6508, 0 6px 8px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 200, 80, 0.8);
+  filter: drop-shadow(0 0 12px rgba(255, 215, 100, 0.5));
+}
+.market-tag {
+  display: inline-block;
+  margin-top: 0.5em;
+  padding: 0.3em 1.5em;
+  background: rgba(139, 107, 61, 0.5);
+  border: 2px solid #d4af37;
+  border-radius: 40px;
+  font-size: clamp(0.9rem, 2vw, 1.4rem);
+  letter-spacing: 0.4em;
+  color: #f5e9d8;
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.4), inset 0 0 15px rgba(255, 230, 150, 0.2);
+  font-weight: 600;
+  backdrop-filter: blur(5px);
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.8), 0 2px 4px #2b1a0f;
+}
 
-    /* ========== 头部 ========== */
-    .header {
-      text-align: center;
-      width: 100%;
-      margin-top: 1vh;
-      position: relative;
-    }
+/* ========== 奖池滚动轨道 ========== */
+.track-wrapper {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  margin: 0.5vh 0;
+}
+.prize-track-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  overflow: visible;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  z-index: 20;
+}
+.prize-track {
+  display: flex;
+  gap: 2vw;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  padding: 0 2vw;
+}
 
-    /* ⭐ 修改：金色立体字效果 */
-    .main-title {
-      font-size: clamp(2.2rem, 6.5vw, 5rem);
-      font-weight: 900;
-      letter-spacing: 0.15em;
-      line-height: 1.15;
-      font-family: 'STKaiti', 'KaiTi', '楷体', serif;
-      /* 金色渐变填充 */
-      background: linear-gradient(180deg,
-        #fff8dc 0%,
-        #ffe9a7 20%,
-        #f7c948 45%,
-        #d4a017 65%,
-        #b8860b 80%,
-        #8b6508 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      /* 立体感：多层阴影叠加 */
-      text-shadow:
-        /* 顶部高光 */
-        0 -1px 0 rgba(255, 255, 220, 0.9),
-        /* 内层暗边 */
-        0 1px 0 #b8860b,
-        0 2px 0 #a0750a,
-        /* 主体立体厚度 */
-        0 3px 0 #8b6508,
-        0 4px 0 #7a5807,
-        0 5px 0 #6a4a06,
-        /* 底部深影 */
-        0 6px 8px rgba(0, 0, 0, 0.6),
-        0 8px 15px rgba(0, 0, 0, 0.5),
-        /* 金色光晕 */
-        0 0 25px rgba(255, 200, 80, 0.8),
-        0 0 50px rgba(212, 175, 55, 0.6);
-      filter: drop-shadow(0 0 12px rgba(255, 215, 100, 0.5));
-      /* 让背景渐变更贴合文字 */
-      -webkit-text-stroke: 0.5px rgba(139, 101, 8, 0.4);
-    }
+/* 奖品卡片与童趣图标样式 */
+.prize-card {
+  flex-shrink: 0;
+  width: clamp(165px, 14.5vw, 240px);
+  height: clamp(155px, 13.5vw, 220px);
+  background: linear-gradient(145deg, #f5e9d8 0%, #e8d5b7 50%, #d4c4a8 100%);
+  border: 3px solid #8b6b3d;
+  border-radius: 20px;
+  box-shadow: 0 8px 0 #5a3e1f, 0 12px 25px rgba(0, 0, 0, 0.6), inset 0 2px 8px rgba(255, 255, 255, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s, border-color 0.3s, transform 0.2s;
+}
 
-    .market-tag {
-      display: inline-block;
-      margin-top: 0.5em;
-      padding: 0.3em 1.5em;
-      background: rgba(139, 107, 61, 0.5);
-      border: 2px solid #d4af37;
-      border-radius: 40px;
-      font-size: clamp(0.9rem, 2vw, 1.4rem);
-      letter-spacing: 0.4em;
-      color: #f5e9d8;
-      box-shadow: 0 0 25px rgba(212, 175, 55, 0.4), inset 0 0 15px rgba(255, 230, 150, 0.2);
-      font-weight: 600;
-      backdrop-filter: blur(5px);
-      text-shadow: 0 0 20px rgba(212, 175, 55, 0.8), 0 2px 4px #2b1a0f;
-    }
+/* ⭐ 新增：针对儿童视觉强化的跳动图标与样式 */
+.prize-icon {
+  font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+  filter: drop-shadow(0 6px 12px rgba(212, 175, 55, 0.5));
+  animation: kidBounce 2.2s ease-in-out infinite alternate;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@keyframes kidBounce {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-6px) scale(1.06); }
+}
 
-    /* ========== 奖池 ========== */
-    .track-wrapper {
-      position: relative;
-      width: 100%;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 260px;
-      margin: 0.5vh 0;
-    }
-    .prize-track-container {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 100%;
-      overflow: visible;
-      height: 220px;
-      display: flex;
-      align-items: center;
-      pointer-events: none;
-      z-index: 20;
-    }
-    .prize-track {
-      display: flex;
-      gap: 2vw;
-      will-change: transform;
-      transform: translate3d(0, 0, 0);
-      padding: 0 2vw;
-    }
+/* 支持嵌入图片类图标适配 */
+.kid-icon-img {
+  width: clamp(55px, 5vw, 85px);
+  height: clamp(55px, 5vw, 85px);
+  object-fit: contain;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
 
-    /* 奖品卡片 */
-    .prize-card {
-      flex-shrink: 0;
-      width: clamp(165px, 14.5vw, 240px);
-      height: clamp(155px, 13.5vw, 220px);
-      background: linear-gradient(145deg, #f5e9d8 0%, #e8d5b7 50%, #d4c4a8 100%);
-      border: 3px solid #8b6b3d;
-      border-radius: 20px;
-      box-shadow:
-        0 8px 0 #5a3e1f,
-        0 12px 25px rgba(0, 0, 0, 0.6),
-        0 0 35px rgba(212, 175, 55, 0.3),
-        inset 0 2px 8px rgba(255, 255, 255, 0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 8px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-      transition: box-shadow 0.3s, border-color 0.3s, transform 0.2s;
-    }
-    .prize-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background-image:
-        repeating-linear-gradient(0deg, transparent 0px, transparent 18px, rgba(139, 107, 61, 0.08) 18px, rgba(139, 107, 61, 0.08) 19px),
-        repeating-linear-gradient(90deg, transparent 0px, transparent 28px, rgba(139, 107, 61, 0.05) 28px, rgba(139, 107, 61, 0.05) 29px);
-      border-radius: 20px;
-      pointer-events: none;
-    }
-    .prize-card::after {
-      content: "❖";
-      position: absolute;
-      top: 6px;
-      right: 10px;
-      color: #8b1e1e;
-      font-size: 0.9rem;
-      opacity: 0.5;
-    }
-    .prize-icon {
-      font-size: clamp(2.2rem, 4.5vw, 3.5rem);
-      filter: drop-shadow(0 3px 5px rgba(80, 50, 20, 0.5));
-      margin-bottom: 5px;
-      line-height: 1;
-    }
-    .prize-name {
-      font-size: clamp(0.7rem, 1.05vw, 0.95rem);
-      font-weight: 700;
-      color: #3b2510;
-      line-height: 1.3;
-      max-width: 100%;
-      word-break: break-word;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-      padding: 0 4px;
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    .prize-id {
-      font-size: clamp(0.55rem, 0.75vw, 0.7rem);
-      letter-spacing: 2px;
-      color: #f5e9d8;
-      margin-top: 5px;
-      font-weight: 700;
-      background: #8b6b3d;
-      padding: 0.1em 0.8em;
-      border-radius: 40px;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-    }
+.prize-name {
+  font-size: clamp(0.95rem, 1.4vw, 1.25rem);
+  font-weight: 800;
+  color: #3b2510;
+  line-height: 1.2;
+}
+.prize-id {
+  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
+  color: #8b6b3d;
+  margin-top: 4px;
+}
 
-    /* 中奖区 */
-    .winning-zone {
-      position: relative;
-      width: clamp(230px, 20vw, 320px);
-      height: clamp(170px, 15vw, 250px);
-      border: 4px solid #d4af37;
-      border-radius: 30px;
-      background: rgba(245, 233, 216, 0.08);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      box-shadow:
-        0 0 0 4px #5a3e1f,
-        0 0 0 8px #8b6b3d,
-        0 0 60px rgba(212, 175, 55, 0.6),
-        inset 0 0 50px rgba(212, 175, 55, 0.15);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 30;
-      pointer-events: none;
-      transition: border-color 0.2s, box-shadow 0.3s;
-      margin: 0 auto;
-      animation: zoneGlow 2.5s infinite alternate;
-    }
-    @keyframes zoneGlow {
-      0% { box-shadow: 0 0 0 4px #5a3e1f, 0 0 0 8px #8b6b3d, 0 0 40px rgba(212, 175, 55, 0.5), inset 0 0 40px rgba(212, 175, 55, 0.1); }
-      100% { box-shadow: 0 0 0 4px #5a3e1f, 0 0 0 8px #d4af37, 0 0 80px rgba(212, 175, 55, 0.9), inset 0 0 60px rgba(212, 175, 55, 0.25); }
-    }
-    .winning-zone-label {
-      font-size: clamp(0.7rem, 1.3vw, 1rem);
-      letter-spacing: 0.3em;
-      color: #f9e7b3;
-      text-transform: uppercase;
-      text-shadow: 0 0 15px #d4af37, 0 2px 4px #2b1a0f;
-      margin-bottom: 8px;
-      font-weight: 800;
-      background: rgba(90, 62, 31, 0.7);
-      padding: 0.2em 1.2em;
-      border-radius: 40px;
-      border: 1px solid #d4af37;
-    }
-    .winning-zone-icon {
-      font-size: clamp(2.8rem, 5.5vw, 4.5rem);
-      filter: drop-shadow(0 0 25px #d4af37);
-      line-height: 1;
-    }
-    .winning-zone.active {
-      border-color: #f9e7b3;
-      box-shadow: 0 0 0 4px #d4af37, 0 0 0 8px #f9e7b3, 0 0 120px #d4af37, inset 0 0 80px rgba(255, 230, 150, 0.4);
-      animation: zonePulse 0.5s ease-out;
-    }
-    @keyframes zonePulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-      100% { transform: scale(1); }
-    }
+/* 🎯 中奖框 */
+.winning-zone {
+  position: relative;
+  width: clamp(190px, 16.5vw, 270px);
+  height: clamp(175px, 15vw, 240px);
+  border: 4px solid #d4af37;
+  border-radius: 28px;
+  background: rgba(139, 107, 61, 0.15);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 0 4px #5a3e1f, 0 0 0 8px #8b6b3d, 0 0 60px rgba(212, 175, 55, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  pointer-events: none;
+  animation: zoneGlow 2.5s infinite alternate;
+}
+@keyframes zoneGlow {
+  0% { box-shadow: 0 0 0 4px #5a3e1f, 0 0 0 8px #8b6b3d, 0 0 40px rgba(212, 175, 55, 0.5); }
+  100% { box-shadow: 0 0 0 4px #5a3e1f, 0 0 0 8px #d4af37, 0 0 80px rgba(212, 175, 55, 0.9); }
+}
+.winning-zone-label {
+  font-size: clamp(0.7rem, 1.3vw, 1rem);
+  letter-spacing: 0.3em;
+  color: #f9e7b3;
+  text-shadow: 0 0 15px #d4af37, 0 2px 4px #2b1a0f;
+  margin-bottom: 8px;
+}
+.winning-zone-icon {
+  font-size: 2rem;
+}
 
-    /* ========== SPACE 按键 ========== */
-    .space-ui {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 1.5vh;
-      z-index: 40;
-    }
-    .space-key {
-      background: linear-gradient(180deg, #d4af37 0%, #8b6b3d 100%);
-      border: 2px solid #f9e7b3;
-      border-radius: 16px;
-      padding: 0.7em 2.6em;
-      font-size: clamp(0.9rem, 2vw, 1.5rem);
-      font-weight: 900;
-      letter-spacing: 0.4em;
-      color: #f5e9d8;
-      text-shadow: 0 2px 4px #2b1a0f, 0 0 15px #d4af37;
-      box-shadow:
-        0 8px 0 #4a351a,
-        0 12px 30px rgba(0, 0, 0, 0.7),
-        0 0 35px rgba(212, 175, 55, 0.6);
-      animation: breathe 2s infinite ease-in-out;
-      backdrop-filter: blur(8px);
-      transition: all 0.1s;
-      cursor: pointer;
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    .space-key:active {
-      transform: translateY(5px);
-      box-shadow: 0 3px 0 #4a351a, 0 8px 20px rgba(0, 0, 0, 0.7);
-    }
-    @keyframes breathe {
-      0% { box-shadow: 0 8px 0 #4a351a, 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(212, 175, 55, 0.5); }
-      50% { box-shadow: 0 8px 0 #4a351a, 0 12px 35px rgba(0, 0, 0, 0.8), 0 0 55px rgba(212, 175, 55, 0.9); }
-      100% { box-shadow: 0 8px 0 #4a351a, 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 25px rgba(212, 175, 55, 0.5); }
-    }
-    .space-hint {
-      margin-top: 1em;
-      color: #d4af37;
-      letter-spacing: 0.3em;
-      font-size: clamp(0.7rem, 1.1vw, 0.95rem);
-      text-transform: uppercase;
-      font-weight: 600;
-      text-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 2px 4px #2b1a0f;
-    }
+/* ========== 控制按钮 ========== */
+.space-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.5vh;
+}
+.space-key {
+  background: linear-gradient(180deg, #f5e9d8 0%, #d4c4a8 100%);
+  border: 3px solid #8b6b3d;
+  border-radius: 12px;
+  padding: 0.6em 2.5em;
+  font-weight: 900;
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  color: #3b2510;
+  box-shadow: 0 6px 0 #5a3e1f, 0 10px 20px rgba(0,0,0,0.5);
+  letter-spacing: 0.2em;
+}
+.space-hint {
+  font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+  color: #f5e9d8;
+  letter-spacing: 0.3em;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+}
+.mobile-draw-btn {
+  display: none;
+  background: linear-gradient(180deg, #d4af37 0%, #8b6b3d 100%);
+  border: 2px solid #f9e7b3;
+  border-radius: 50px;
+  padding: 0.8em 2.5em;
+  font-weight: 900;
+  color: #f5e9d8;
+  font-size: 1.2rem;
+  box-shadow: 0 8px 0 #4a351a, 0 0 40px rgba(212, 175, 55, 0.6);
+  cursor: pointer;
+}
 
-    /* ========== 中奖浮层 ========== */
-    .winner-overlay {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      pointer-events: none;
-      background: radial-gradient(circle at center, rgba(212, 175, 55, 0.2) 0%, transparent 70%);
-      opacity: 0;
-      transition: opacity 0.4s;
-    }
-    .winner-overlay.show {
-      opacity: 1;
-      pointer-events: none;
-    }
-    .winner-card {
-      background: linear-gradient(145deg, #f5e9d8 0%, #e8d5b7 60%, #d4c4a8 100%);
-      border: 5px solid #8b1e1e;
-      border-radius: 40px;
-      padding: 2em 3em;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-shadow:
-        0 0 0 6px #d4af37,
-        0 0 100px rgba(212, 175, 55, 0.9),
-        0 30px 50px rgba(0, 0, 0, 0.8),
-        inset 0 0 60px rgba(255, 240, 200, 0.6);
-      animation: winnerBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-      text-align: center;
-      max-width: 90vw;
-      position: relative;
-    }
-    .winner-card::before {
-      content: "❖ ❖ ❖";
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 1.8rem;
-      color: #d4af37;
-      text-shadow: 0 0 20px #d4af37;
-      letter-spacing: 0.5em;
-    }
-    @keyframes winnerBounce {
-      0% { transform: scale(0.8); opacity: 0; }
-      50% { transform: scale(1.15); }
-      80% { transform: scale(0.98); }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .winner-sub {
-      font-size: clamp(0.95rem, 2.3vw, 1.8rem);
-      letter-spacing: 0.3em;
-      color: #8b1e1e;
-      margin-bottom: 0.2em;
-      font-weight: 800;
-    }
-    .winner-prize-icon {
-      font-size: clamp(3.2rem, 9vw, 5.5rem);
-      filter: drop-shadow(0 0 30px #d4af37);
-      margin: 0.2em 0;
-    }
-    .winner-prize-name {
-      font-size: clamp(1.4rem, 3.8vw, 3.2rem);
-      font-weight: 900;
-      color: #3b2510;
-      text-shadow: 0 0 30px rgba(212, 175, 55, 0.8), 0 2px 0 rgba(255, 255, 255, 0.6);
-      line-height: 1.3;
-      max-width: 80vw;
-      word-break: break-word;
-      background: linear-gradient(180deg, #8b1e1e, #c0392b);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      padding: 0 10px;
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    .congrats {
-      font-size: clamp(1.1rem, 2.8vw, 2.2rem);
-      letter-spacing: 0.3em;
-      color: #8b1e1e;
-      text-transform: uppercase;
-      margin-top: 0.3em;
-      font-weight: 900;
-      text-shadow: 0 0 20px #d4af37, 0 2px 0 rgba(255, 255, 255, 0.5);
-    }
+/* ========== 中奖弹窗 ========== */
+.winner-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.3) 0%, rgba(0,0,0,0.7) 80%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.winner-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.winner-card {
+  background: linear-gradient(145deg, #fff8dc 0%, #f5e9d8 60%, #e8d5b7 100%);
+  border: 5px solid #d4af37;
+  border-radius: 40px;
+  padding: 2.5em 3.5em;
+  box-shadow: 0 0 80px rgba(212, 175, 55, 0.8), inset 0 0 30px rgba(255, 255, 255, 0.8);
+  text-align: center;
+  max-width: 90vw;
+  position: relative;
+  transform: scale(0.8);
+}
+.winner-overlay.show .winner-card {
+  animation: winnerBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes winnerBounce {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.winner-sub {
+  font-size: clamp(1rem, 2.3vw, 1.8rem);
+  letter-spacing: 0.3em;
+  color: #8b1e1e;
+  font-weight: 800;
+}
+.winner-prize-icon {
+  font-size: clamp(3.5rem, 9vw, 6rem);
+  filter: drop-shadow(0 0 25px #d4af37);
+  margin: 0.2em 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.winner-prize-name {
+  font-size: clamp(1.5rem, 3.8vw, 3.2rem);
+  font-weight: 900;
+  background: linear-gradient(180deg, #8b1e1e, #c0392b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding: 0 10px;
+}
+.congrats {
+  font-size: clamp(1.1rem, 2.8vw, 2.2rem);
+  letter-spacing: 0.3em;
+  color: #8b1e1e;
+  margin-top: 0.3em;
+  font-weight: 900;
+}
 
-    /* ========== 手机按钮 ========== */
-    .mobile-draw-btn {
-      display: none;
-      margin-top: 1em;
-      background: linear-gradient(180deg, #d4af37 0%, #8b6b3d 100%);
-      border: 2px solid #f9e7b3;
-      border-radius: 50px;
-      padding: 0.8em 2.5em;
-      font-weight: 900;
-      letter-spacing: 0.2em;
-      color: #f5e9d8;
-      font-size: 1.2rem;
-      box-shadow: 0 8px 0 #4a351a, 0 0 40px rgba(212, 175, 55, 0.6);
-      cursor: pointer;
-      transition: all 0.1s;
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    .mobile-draw-btn:active {
-      transform: translateY(5px);
-      box-shadow: 0 3px 0 #4a351a, 0 0 30px rgba(212, 175, 55, 0.6);
-    }
-    @media (max-width: 700px) {
-      .mobile-draw-btn { display: block; }
-      .space-key { display: none; }
-      .space-hint { display: none; }
-      .prize-card { width: 140px; height: 140px; border-width: 2px; }
-      .winning-zone { width: 190px; height: 140px; border-width: 3px; }
-      .winner-card { padding: 1.5em; border-radius: 30px; }
-      .herb { display: none; }
-    }
+/* 彩纸粒与音效控制 */
+.confetti-piece {
+  position: fixed;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  z-index: 300;
+  pointer-events: none;
+  animation: confettiFall 2.5s ease-in forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.music-control {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  z-index: 600;
+  background: rgba(90, 62, 31, 0.8);
+  border: 2px solid #d4af37;
+  border-radius: 40px;
+  padding: 0.5em 1.2em;
+  color: #f5e9d8;
+  font-size: 1rem;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.volume-slider {
+  position: fixed;
+  bottom: 24px;
+  right: 140px;
+  z-index: 600;
+  width: 80px;
+  accent-color: #d4af37;
+}
+.audio-start-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(20, 10, 5, 0.88);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #f9e7b3;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: opacity 0.5s;
+}
+.audio-start-hint.hide { opacity: 0; pointer-events: none; }
+.audio-start-hint .icon { font-size: 4rem; margin-bottom: 20px; filter: drop-shadow(0 0 30px #d4af37); }
 
-    /* ========== 彩纸 ========== */
-    .confetti-piece {
-      position: fixed;
-      top: -20px;
-      width: 10px;
-      height: 10px;
-      background: #d4af37;
-      z-index: 300;
-      pointer-events: none;
-      animation: confettiFall 2.5s ease-in forwards;
-    }
-    @keyframes confettiFall {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-    }
-
-    /* ========== 音乐控制 ========== */
-    .music-control {
-      position: fixed;
-      bottom: 18px;
-      right: 18px;
-      z-index: 600;
-      background: rgba(90, 62, 31, 0.8);
-      border: 2px solid #d4af37;
-      border-radius: 40px;
-      padding: 0.5em 1.2em;
-      color: #f5e9d8;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
-      transition: all 0.2s;
-      backdrop-filter: blur(5px);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    .music-control:hover {
-      background: rgba(139, 107, 61, 0.9);
-      box-shadow: 0 0 40px rgba(212, 175, 55, 0.8);
-    }
-    .music-control.off {
-      opacity: 0.6;
-      border-color: #8b6b3d;
-    }
-    .volume-slider {
-      position: fixed;
-      bottom: 70px;
-      right: 18px;
-      z-index: 600;
-      width: 120px;
-      height: 6px;
-      background: #4a351a;
-      border-radius: 3px;
-      outline: none;
-      opacity: 0.6;
-      transition: opacity 0.2s;
-      cursor: pointer;
-    }
-    .volume-slider:hover {
-      opacity: 1;
-    }
-    .volume-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #d4af37;
-      box-shadow: 0 0 10px #d4af37;
-      cursor: pointer;
-    }
-
-    /* ========== 音频启动提示 ========== */
-    .audio-start-hint {
-      position: fixed;
-      inset: 0;
-      z-index: 700;
-      background: rgba(20, 12, 6, 0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      color: #f5e9d8;
-      font-size: 1.5rem;
-      cursor: pointer;
-      transition: opacity 0.5s;
-      backdrop-filter: blur(5px);
-      font-family: 'STKaiti', 'KaiTi', serif;
-    }
-    .audio-start-hint.hide {
-      opacity: 0;
-      pointer-events: none;
-    }
-    .audio-start-hint .icon {
-      font-size: 4rem;
-      margin-bottom: 20px;
-      filter: drop-shadow(0 0 30px #d4af37);
-    }
-  </style>
+@media (max-width: 700px) {
+  .mobile-draw-btn { display: block; }
+  .space-key, .space-hint { display: none; }
+  .prize-card { width: 140px; height: 140px; }
+  .winning-zone { width: 190px; height: 140px; }
+}
+</style>
 </head>
 <body>
-  <!-- 音频启动提示 -->
-  <div class="audio-start-hint" id="audioStartHint">
-    <div class="icon">🔊</div>
-    <div>点击画面开启音乐</div>
+
+<!-- 启动音乐提示 overlay -->
+<div class="audio-start-hint" id="audioStartHint">
+  <div class="icon">🔊</div>
+  <div>点击屏幕 或 按空格键 开启声音体验</div>
+</div>
+
+<div class="stage-bg"></div>
+<div class="bg-overlay"></div>
+<div class="paper-texture"></div>
+<div class="herb-particles" id="herbContainer"></div>
+<div class="scroll-decoration"></div>
+
+<!-- 主UI框架 -->
+<div class="draw-container">
+  <div class="header">
+    <div class="main-title">续命养身市集</div>
+    <div class="market-tag">🎁 现场专属好礼 🎁</div>
   </div>
 
-  <!-- 背景 -->
-  <div class="stage-bg"></div>
-  <div class="bg-overlay"></div>
-  <div class="paper-texture"></div>
-  <div class="ink-glow"></div>
-  <div class="cabinet-pattern"></div>
-
-  <!-- 漂浮意象粒子 -->
-  <div class="herb-particles" id="herbContainer"></div>
-
-  <!-- 竹简 -->
-  <div class="scroll-decoration"></div>
-
-  <!-- 主界面 -->
-  <div class="draw-container">
-    <div class="header">
-      <div class="main-title">续命养身市集</div>
-      <div class="market-tag">🎁 现场专属好礼 🎁</div>
+  <div class="track-wrapper">
+    <div class="prize-track-container">
+      <div class="prize-track" id="prizeTrack"></div>
     </div>
-
-    <div class="track-wrapper">
-      <div class="prize-track-container">
-        <div class="prize-track" id="prizeTrack"></div>
-      </div>
-      <div class="winning-zone" id="winningZone">
-        <div class="winning-zone-label">🎯 中 奖 区 🎯</div>
-        <div class="winning-zone-icon">🏆</div>
-      </div>
-    </div>
-
-    <div class="space-ui">
-      <div class="space-key" id="spaceKey">SPACE</div>
-      <div class="space-hint">按 空格键 抽奖</div>
-      <button class="mobile-draw-btn" id="mobileDrawBtn">🎲 开始抽奖</button>
+    <div class="winning-zone" id="winningZone">
+      <div class="winning-zone-label">🎯 中 奖 区 🎯</div>
+      <div class="winning-zone-icon">🏆</div>
     </div>
   </div>
 
-  <!-- 中奖浮层 -->
-  <div class="winner-overlay" id="winnerOverlay">
-    <div class="winner-card" id="winnerCard">
-      <div class="winner-sub">🎉 恭 喜 中 奖 🎉</div>
-      <div class="winner-prize-icon" id="winnerIcon">🍲</div>
-      <div class="winner-prize-name" id="winnerName">火锅套餐券</div>
-      <div class="congrats">🎊 福 气 满 满 🎊</div>
-    </div>
+  <div class="space-ui">
+    <div class="space-key" id="spaceKey">SPACE</div>
+    <div class="space-hint">按 空格键 抽奖</div>
+    <button class="mobile-draw-btn" id="mobileDrawBtn">🎲 开始抽奖</button>
   </div>
+</div>
 
-  <!-- 音乐控制 -->
-  <div class="music-control" id="musicControl">
-    <span id="musicIcon">🎵</span>
-    <span id="musicText">音乐开</span>
+<!-- 中奖展现浮层 -->
+<div class="winner-overlay" id="winnerOverlay">
+  <div class="winner-card" id="winnerCard">
+    <div class="winner-sub">🎉 恭 喜 中 奖 🎉</div>
+    <div class="winner-prize-icon" id="winnerIcon">🍲🔥✨</div>
+    <div class="winner-prize-name" id="winnerName">火锅套餐券</div>
+    <div class="congrats">🎊 福 气 满 满 🎊</div>
   </div>
-  <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="30">
+</div>
 
-  <script>
-    (function() {
-      // ==================== 奖品 ====================
-      const prizes = [
-        { id: 1, name: "火锅套餐券", icon: "🍲", quantity: 1 },
-        { id: 2, name: "品格班体验券", icon: "📖", quantity: 1 },
-        { id: 3, name: "清热菊花茶免费一杯", icon: "🍵", quantity: 1 },
-        { id: 4, name: "造型包子手工工作坊 50% 优惠券", icon: "🥟", quantity: 1 },
-        { id: 5, name: "儿童桌游免费体验券", icon: "🎲", quantity: 1 },
-        { id: 6, name: "乐在同心亲子班体验券", icon: "👨‍👩‍👧‍👦", quantity: 1 }
-      ];
+<div class="music-control" id="musicControl">
+  <span id="musicIcon">🎵</span>
+  <span id="musicText">音乐开</span>
+</div>
+<input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="30">
 
-      // ==================== 状态 ====================
-      let state = 'IDLE';
-      let winnerLocked = false;
-      let animationFrame = null;
-      let positionX = 0;
-      const BASE_SPEED = 6.0;
-      let speed = BASE_SPEED;
+<script>
+(function() {
+// ⭐ 修改点 1：将图标升级为富有童趣与魔法感的组合 Emoji 符号
+// （也可直接换为图片标签如：'<img src="images/hotpot.png" class="kid-icon-img">'）
+const prizes = [
+  { id: 1, name: "火锅套餐券", icon: "🍲🔥✨", quantity: 1 },
+  { id: 2, name: "品格班体验券", icon: "📖🪄🌟", quantity: 1 },
+  { id: 3, name: "清热菊花茶免费一杯", icon: "🌼🧋✨", quantity: 1 },
+  { id: 4, name: "造型包子手工工作坊 50% 优惠券", icon: "🧸🥟🎨", quantity: 1 },
+  { id: 5, name: "儿童桌游免费体验券", icon: "🎲🏰🧩", quantity: 1 },
+  { id: 6, name: "乐在同心亲子班体验券", icon: "👨‍👩‍👧‍👦🎈🎉", quantity: 1 }
+];
 
-      const prizeTrack = document.getElementById('prizeTrack');
-      const winningZone = document.getElementById('winningZone');
-      const winnerOverlay = document.getElementById('winnerOverlay');
-      const winnerIcon = document.getElementById('winnerIcon');
-      const winnerName = document.getElementById('winnerName');
-      const spaceKey = document.getElementById('spaceKey');
-      const mobileDrawBtn = document.getElementById('mobileDrawBtn');
-      const herbContainer = document.getElementById('herbContainer');
-      const audioStartHint = document.getElementById('audioStartHint');
-      const musicControl = document.getElementById('musicControl');
-      const musicIcon = document.getElementById('musicIcon');
-      const musicText = document.getElementById('musicText');
-      const volumeSlider = document.getElementById('volumeSlider');
+let state = 'IDLE';
+let winnerLocked = false;
+let animationFrame = null;
+let positionX = 0;
+const BASE_SPEED = 6.0;
+let speed = BASE_SPEED;
 
-      // ==================== 音频配置 ====================
-      const AUDIO_FILES = {
-        backgroundMusic: 'music1.mp3',
-        winnerSound: 'music 2.mp3'
-      };
+const prizeTrack = document.getElementById('prizeTrack');
+const winningZone = document.getElementById('winningZone');
+const winnerOverlay = document.getElementById('winnerOverlay');
+const winnerIcon = document.getElementById('winnerIcon');
+const winnerName = document.getElementById('winnerName');
+const mobileDrawBtn = document.getElementById('mobileDrawBtn');
+const herbContainer = document.getElementById('herbContainer');
+const audioStartHint = document.getElementById('audioStartHint');
+const musicControl = document.getElementById('musicControl');
+const musicIcon = document.getElementById('musicIcon');
+const musicText = document.getElementById('musicText');
+const volumeSlider = document.getElementById('volumeSlider');
 
-      // ==================== 音频系统 ====================
-      let bgmAudio = null;
-      let winnerAudio = null;
-      let musicEnabled = true;
-      let musicVolume = 0.3;
-      let musicStarted = false;
-      let winnerEndTimer = null;
+// ==================== 音频逻辑 ====================
+let bgmAudio = null;
+let winnerAudio = null;
+let musicEnabled = true;
+let musicVolume = 0.3;
+let musicStarted = false;
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let sfxGainNode = null;
 
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      let audioCtx = null;
-      let sfxGainNode = null;
+function initAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new AudioContext();
+    sfxGainNode = audioCtx.createGain();
+    sfxGainNode.gain.value = musicVolume;
+    sfxGainNode.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
 
-      function initAudioContext() {
-        if (audioCtx) return;
-        try {
-          audioCtx = new AudioContext();
-          sfxGainNode = audioCtx.createGain();
-          sfxGainNode.gain.value = 0.8;
-          sfxGainNode.connect(audioCtx.destination);
-        } catch (e) {
-          console.warn('Web Audio 初始化失败', e);
-        }
+function loadUserAudio() {
+  bgmAudio = new Audio('music1.mp3');
+  bgmAudio.loop = true;
+  bgmAudio.volume = musicVolume;
+  bgmAudio.addEventListener('error', () => { bgmAudio = null; });
+
+  winnerAudio = new Audio('music 2.mp3');
+  winnerAudio.volume = 0.9;
+  winnerAudio.addEventListener('error', () => { winnerAudio = null; });
+}
+
+function startBackgroundMusic() {
+  if (!musicEnabled) return;
+  initAudioContext();
+  if (bgmAudio) {
+    bgmAudio.play().catch(() => startSynthBackgroundMusic());
+  } else {
+    startSynthBackgroundMusic();
+  }
+}
+
+function pauseBackgroundMusic() {
+  if (bgmAudio) bgmAudio.pause();
+  stopSynthBackgroundMusic();
+}
+
+let synthMusicInterval = null;
+let synthMusicGain = null;
+function startSynthBackgroundMusic() {
+  initAudioContext();
+  if (!audioCtx || synthMusicInterval) return;
+  synthMusicGain = audioCtx.createGain();
+  synthMusicGain.gain.value = musicVolume;
+  synthMusicGain.connect(audioCtx.destination);
+  
+  const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+  let idx = 0;
+  synthMusicInterval = setInterval(() => {
+    if (!musicEnabled || !audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.frequency.value = scale[idx % scale.length];
+    idx++;
+    g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc.connect(g);
+    g.connect(synthMusicGain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.45);
+  }, 300);
+}
+
+function stopSynthBackgroundMusic() {
+  if (synthMusicInterval) {
+    clearInterval(synthMusicInterval);
+    synthMusicInterval = null;
+  }
+}
+
+function playWinnerSound() {
+  if (!musicEnabled) return;
+  if (winnerAudio) {
+    winnerAudio.currentTime = 0;
+    winnerAudio.play().catch(() => playSynthWinnerSound());
+  } else {
+    playSynthWinnerSound();
+  }
+}
+
+function playSynthWinnerSound() {
+  if (!audioCtx) return;
+  const notes = [523.25, 659.25, 783.99, 1046.50];
+  notes.forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.12);
+    g.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i * 0.12 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.4);
+    osc.connect(g);
+    g.connect(sfxGainNode);
+    osc.start(audioCtx.currentTime + i * 0.12);
+    osc.stop(audioCtx.currentTime + i * 0.12 + 0.4);
+  });
+}
+
+function playSfx(type) {
+  if (!audioCtx || !musicEnabled) return;
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  if (type === 'whoosh') {
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+  } else if (type === 'impact') {
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.4);
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+  }
+  osc.connect(gain);
+  gain.connect(sfxGainNode);
+  osc.start(now);
+  osc.stop(now + 0.4);
+}
+
+// ==================== 构建奖品列表轨道 ====================
+function buildTrack() {
+  prizeTrack.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  const repeatCount = 5;
+  for (let r = 0; r < repeatCount; r++) {
+    prizes.forEach((prize, idx) => {
+      const card = document.createElement('div');
+      card.className = 'prize-card';
+      card.dataset.prizeId = prize.id;
+      
+      const iconSpan = document.createElement('div');
+      iconSpan.className = 'prize-icon';
+      // ⭐ 修改点 2：改为 innerHTML 以支持 HTML 标签/图片/富文本图标
+      iconSpan.innerHTML = prize.icon;
+
+      const nameSpan = document.createElement('div');
+      nameSpan.className = 'prize-name';
+      if (prize.name.includes('50%')) {
+        nameSpan.innerHTML = prize.name.replace('50%', '<strong style="color:#8b1e1e;font-size:1.1em;">50%</strong>');
+      } else {
+        nameSpan.textContent = prize.name;
       }
 
-      function loadUserAudio() {
-        bgmAudio = new Audio(AUDIO_FILES.backgroundMusic);
-        bgmAudio.loop = true;
-        bgmAudio.volume = musicVolume;
-        bgmAudio.preload = 'auto';
-        bgmAudio.addEventListener('canplaythrough', () => console.log('✅ 背景音乐已加载'));
-        bgmAudio.addEventListener('error', () => { bgmAudio = null; });
-
-        winnerAudio = new Audio(AUDIO_FILES.winnerSound);
-        winnerAudio.volume = 0.9;
-        winnerAudio.preload = 'auto';
-        winnerAudio.addEventListener('canplaythrough', () => console.log('✅ 中奖音效已加载'));
-        winnerAudio.addEventListener('error', () => { winnerAudio = null; });
-
-        winnerAudio.addEventListener('ended', () => {
-          console.log('🎵 中奖音效播放完毕，自动结束中奖展示');
-          if (winnerEndTimer) clearTimeout(winnerEndTimer);
-          winnerEndTimer = setTimeout(() => {
-            finishWinnerDisplay();
-          }, 300);
-        });
-      }
-
-      // ==================== 结束中奖展示 ====================
-      function finishWinnerDisplay() {
-        if (state !== 'STOPPED' && state !== 'WINNER_DISPLAY') return;
-        console.log('🏁 结束中奖展示，准备下一轮');
-        winnerOverlay.classList.remove('show');
-        document.querySelectorAll('.prize-card').forEach(c => {
-          c.style.boxShadow = '';
-          c.style.borderColor = '';
-          c.style.transform = '';
-        });
-        winningZone.classList.remove('active');
-        winnerLocked = false;
-        state = 'IDLE';
-
-        if (bgmAudio && musicEnabled) {
-          bgmAudio.play().catch(e => console.warn(e));
-        } else if (!bgmAudio) {
-          startSynthBackgroundMusic();
-        }
-      }
-
-      // ==================== 背景音乐 ====================
-      function startBackgroundMusic() {
-        if (!musicEnabled) return;
-        if (bgmAudio) {
-          bgmAudio.play().then(() => {
-            musicStarted = true;
-          }).catch(() => startSynthBackgroundMusic());
-        } else {
-          startSynthBackgroundMusic();
-        }
-      }
-
-      function pauseBackgroundMusic() {
-        if (bgmAudio) bgmAudio.pause();
-        stopSynthBackgroundMusic();
-        musicStarted = false;
-      }
-
-      function setMusicVolume(vol) {
-        musicVolume = vol;
-        if (bgmAudio) bgmAudio.volume = vol;
-        if (synthMusicGain) synthMusicGain.gain.value = vol;
-      }
-
-      // ==================== 合成背景音乐（备用） ====================
-      let synthMusicInterval = null;
-      let synthMusicGain = null;
-
-      function startSynthBackgroundMusic() {
-        initAudioContext();
-        if (!audioCtx) return;
-        if (synthMusicInterval) return;
-
-        synthMusicGain = audioCtx.createGain();
-        synthMusicGain.gain.value = musicVolume;
-        synthMusicGain.connect(audioCtx.destination);
-
-        const scale = [
-          261.63, 293.66, 329.63, 392.00, 440.00,
-          523.25, 587.33, 659.25, 783.99, 880.00
-        ];
-
-        const melody = [
-          0, 2, 4, -1, 3, 2, 0, -1,
-          2, 3, 5, -1, 4, 3, 2, -1,
-          0, 2, 4, 6, 5, 4, 3, -1,
-          2, 3, 1, -1, 0, -1, -1, -1,
-          4, 5, 7, -1, 6, 5, 4, -1,
-          3, 4, 6, -1, 5, 4, 3, -1,
-          2, 3, 5, 4, 3, 2, 1, -1,
-          0, -1, -1, -1, -1, -1, -1, -1
-        ];
-
-        const rhythm = [
-          0.8, 0.6, 0.8, 0.5, 0.6, 0.6, 1.2, 0.5,
-          0.6, 0.6, 0.8, 0.5, 0.6, 0.6, 1.2, 0.5,
-          0.8, 0.6, 0.6, 0.5, 0.6, 0.6, 0.8, 0.5,
-          0.6, 0.6, 1.2, 0.5, 1.5, 0.5, 0.5, 0.5,
-          0.6, 0.6, 0.8, 0.5, 0.6, 0.6, 1.2, 0.5,
-          0.6, 0.6, 0.8, 0.5, 0.6, 0.6, 1.2, 0.5,
-          0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.8, 0.5,
-          1.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
-        ];
-
-        const noteDuration = 0.5;
-        let melodyIdx = 0;
-
-        function scheduleNextPhrase() {
-          if (!musicEnabled || !audioCtx) return;
-          const now = audioCtx.currentTime;
-          let time = now + 0.05;
-
-          for (let i = 0; i < 8; i++) {
-            const noteIdx = melody[melodyIdx % melody.length];
-            const dur = rhythm[melodyIdx % rhythm.length] * noteDuration;
-            melodyIdx++;
-
-            if (noteIdx === -1) {
-              time += dur;
-              continue;
-            }
-
-            const freq = scale[noteIdx % scale.length];
-
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0, time);
-            gain.gain.linearRampToValueAtTime(0.1, time + 0.08);
-            gain.gain.exponentialRampToValueAtTime(0.001, time + dur * 1.1);
-            osc.connect(gain);
-            gain.connect(synthMusicGain);
-            osc.start(time);
-            osc.stop(time + dur * 1.2);
-
-            const osc2 = audioCtx.createOscillator();
-            const gain2 = audioCtx.createGain();
-            osc2.type = 'sine';
-            osc2.frequency.value = freq * 2;
-            gain2.gain.setValueAtTime(0, time);
-            gain2.gain.linearRampToValueAtTime(0.035, time + 0.1);
-            gain2.gain.exponentialRampToValueAtTime(0.001, time + dur * 0.9);
-            osc2.connect(gain2);
-            gain2.connect(synthMusicGain);
-            osc2.start(time);
-            osc2.stop(time + dur);
-
-            if (i % 2 === 0) {
-              const bassOsc = audioCtx.createOscillator();
-              const bassGain = audioCtx.createGain();
-              bassOsc.type = 'sine';
-              bassOsc.frequency.value = freq / 2;
-              bassGain.gain.setValueAtTime(0, time);
-              bassGain.gain.linearRampToValueAtTime(0.05, time + 0.15);
-              bassGain.gain.exponentialRampToValueAtTime(0.001, time + dur * 1.5);
-              bassOsc.connect(bassGain);
-              bassGain.connect(synthMusicGain);
-              bassOsc.start(time);
-              bassOsc.stop(time + dur * 1.5);
-            }
-
-            time += dur;
-          }
-        }
-
-        scheduleNextPhrase();
-        const phraseDuration = 8 * noteDuration * 1000 * 0.7;
-        synthMusicInterval = setInterval(() => {
-          if (musicEnabled && audioCtx && audioCtx.state === 'running') {
-            scheduleNextPhrase();
-          }
-        }, phraseDuration);
-
-        console.log('🎵 古风五声音阶音乐已启动（舒缓悠扬）');
-      }
-
-      function stopSynthBackgroundMusic() {
-        if (synthMusicInterval) {
-          clearInterval(synthMusicInterval);
-          synthMusicInterval = null;
-        }
-      }
-
-      // ==================== 中奖音效 ====================
-      function playWinnerSound() {
-        if (!musicEnabled) return;
-        if (winnerAudio) {
-          winnerAudio.currentTime = 0;
-          winnerAudio.play().catch(() => playSynthWinnerSound());
-        } else {
-          playSynthWinnerSound();
-          if (winnerEndTimer) clearTimeout(winnerEndTimer);
-          winnerEndTimer = setTimeout(() => {
-            finishWinnerDisplay();
-          }, 2600);
-        }
-      }
-
-      function playSynthWinnerSound() {
-        initAudioContext();
-        if (!audioCtx) return;
-        const now = audioCtx.currentTime;
-
-        const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
-        notes.forEach((freq, i) => {
-          const o = audioCtx.createOscillator();
-          const g = audioCtx.createGain();
-          o.type = 'triangle';
-          o.frequency.value = freq;
-          const startTime = now + i * 0.15;
-          g.gain.setValueAtTime(0, startTime);
-          g.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
-          g.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
-          o.connect(g);
-          g.connect(sfxGainNode);
-          o.start(startTime);
-          o.stop(startTime + 0.5);
-        });
-
-        setTimeout(() => {
-          if (!audioCtx) return;
-          const cheerDuration = 2.0;
-          const cheerBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * cheerDuration, audioCtx.sampleRate);
-          const cheerData = cheerBuffer.getChannelData(0);
-          for (let i = 0; i < cheerData.length; i++) {
-            const t = i / audioCtx.sampleRate;
-            const env = Math.min(1, t * 8) * Math.max(0, 1 - t / cheerDuration);
-            cheerData[i] = (Math.random() * 2 - 1) * env * 0.4;
-          }
-          const cheerSource = audioCtx.createBufferSource();
-          cheerSource.buffer = cheerBuffer;
-          const cheerFilter = audioCtx.createBiquadFilter();
-          cheerFilter.type = 'highpass';
-          cheerFilter.frequency.value = 800;
-          const cheerGain = audioCtx.createGain();
-          cheerGain.gain.value = 0.35;
-          cheerSource.connect(cheerFilter);
-          cheerFilter.connect(cheerGain);
-          cheerGain.connect(sfxGainNode);
-          cheerSource.start();
-        }, 400);
-      }
-
-      // ==================== 简单音效 ====================
-      function playSfx(type) {
-        if (!audioCtx || !musicEnabled) return;
-        initAudioContext();
-        if (!audioCtx) return;
-        const now = audioCtx.currentTime;
-
-        if (type === 'whoosh') {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(200, now);
-          osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-          osc.connect(gain);
-          gain.connect(sfxGainNode);
-          osc.start(now);
-          osc.stop(now + 0.25);
-        } else if (type === 'impact') {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(180, now);
-          osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
-          gain.gain.setValueAtTime(0.6, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-          osc.connect(gain);
-          gain.connect(sfxGainNode);
-          osc.start(now);
-          osc.stop(now + 0.5);
-        } else if (type === 'ding') {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.value = 1200;
-          gain.gain.setValueAtTime(0.4, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-          osc.connect(gain);
-          gain.connect(sfxGainNode);
-          osc.start(now);
-          osc.stop(now + 0.8);
-        }
-      }
-
-      // ==================== 构建奖池 ====================
-      function buildTrack() {
-        prizeTrack.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-        const repeatCount = 5;
-
-        for (let r = 0; r < repeatCount; r++) {
-          prizes.forEach((prize, idx) => {
-            const card = document.createElement('div');
-            card.className = 'prize-card';
-            card.dataset.prizeId = prize.id;
-            card.dataset.prizeIndex = idx;
-            card.dataset.instance = r;
-
-            const iconSpan = document.createElement('div');
-            iconSpan.className = 'prize-icon';
-            iconSpan.textContent = prize.icon;
-
-            const nameSpan = document.createElement('div');
-            nameSpan.className = 'prize-name';
-            if (prize.name.includes('50%')) {
-              nameSpan.innerHTML = prize.name.replace('50%', '<strong style="color:#8b1e1e;font-size:1.1em;">50%</strong>');
-            } else {
-              nameSpan.textContent = prize.name;
-            }
-
-            const idSpan = document.createElement('div');
-            idSpan.className = 'prize-id';
-            idSpan.textContent = `第 ${String(prize.id).padStart(2, '0')} 味`;
-
-            card.appendChild(iconSpan);
-            card.appendChild(nameSpan);
-            card.appendChild(idSpan);
-            fragment.appendChild(card);
-          });
-        }
-        prizeTrack.appendChild(fragment);
-        positionX = 0;
-        updateTrackTransform();
-      }
-
-      function getCardAndGapWidth() {
-        const firstCard = prizeTrack.querySelector('.prize-card');
-        if (!firstCard) return 0;
-        const style = window.getComputedStyle(prizeTrack);
-        const gap = parseFloat(style.gap) || 0;
-        return firstCard.offsetWidth + gap;
-      }
-
-      function updateTrackTransform() {
-        prizeTrack.style.transform = `translate3d(${-positionX}px, 0, 0)`;
-      }
-
-      // ==================== 动画 ====================
-      function animate() {
-        if (state !== 'RUNNING') return;
-        positionX += speed;
-        const oneCycleWidth = getCardAndGapWidth() * prizes.length;
-        if (oneCycleWidth > 0 && positionX >= oneCycleWidth) {
-          positionX -= oneCycleWidth;
-          updateTrackTransform();
-        } else {
-          updateTrackTransform();
-        }
-        animationFrame = requestAnimationFrame(animate);
-      }
-
-      function startRunning() {
-        if (state === 'RUNNING') return;
-        state = 'RUNNING';
-        winnerLocked = false;
-        winnerOverlay.classList.remove('show');
-        winningZone.classList.remove('active');
-        document.querySelectorAll('.prize-card').forEach(c => {
-          c.style.boxShadow = '';
-          c.style.borderColor = '';
-          c.style.transform = '';
-        });
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        playSfx('whoosh');
-        animate();
-      }
-
-      function stopImmediately() {
-        if (state !== 'RUNNING') return;
-        if (animationFrame) {
-          cancelAnimationFrame(animationFrame);
-          animationFrame = null;
-        }
-
-        state = 'STOPPED';
-        winnerLocked = true;
-
-        if (bgmAudio) bgmAudio.pause();
-        stopSynthBackgroundMusic();
-
-        playSfx('impact');
-        setTimeout(() => playSfx('ding'), 180);
-
-        const winner = determineWinnerFromPosition();
-
-        winningZone.classList.add('active');
-        setTimeout(() => winningZone.classList.remove('active'), 800);
-
-        if (winner && winner.cardElement) {
-          const card = winner.cardElement;
-          card.style.boxShadow = '0 0 60px #d4af37, 0 0 120px #8b6b3d, inset 0 0 40px rgba(255,230,150,0.9)';
-          card.style.borderColor = '#f9e7b3';
-          card.style.transform = 'scale(1.05)';
-        }
-
-        createConfetti();
-
-        if (winner) {
-          setTimeout(() => {
-            winnerIcon.textContent = winner.prize.icon;
-            winnerName.textContent = winner.prize.name;
-            winnerOverlay.classList.add('show');
-            playWinnerSound();
-          }, 120);
-        }
-      }
-
-      function determineWinnerFromPosition() {
-        const winningZoneRect = winningZone.getBoundingClientRect();
-        const zoneCenterX = winningZoneRect.left + winningZoneRect.width / 2;
-        const zoneCenterY = winningZoneRect.top + winningZoneRect.height / 2;
-
-        const cards = Array.from(prizeTrack.querySelectorAll('.prize-card'));
-        let closestCard = null;
-        let minDistance = Infinity;
-
-        cards.forEach(card => {
-          const rect = card.getBoundingClientRect();
-          const cardCenterX = rect.left + rect.width / 2;
-          const cardCenterY = rect.top + rect.height / 2;
-          const dx = cardCenterX - zoneCenterX;
-          const dy = cardCenterY - zoneCenterY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestCard = card;
-          }
-        });
-
-        if (!closestCard) return null;
-        const prizeId = parseInt(closestCard.dataset.prizeId, 10);
-        const prize = prizes.find(p => p.id === prizeId) || prizes[0];
-        return { cardElement: closestCard, prize, distance: minDistance };
-      }
-
-      function createConfetti() {
-        const colors = ['#d4af37', '#f5e9d8', '#8b6b3d', '#ffd966', '#c0392b', '#e8d5b7'];
-        for (let i = 0; i < 50; i++) {
-          const piece = document.createElement('div');
-          piece.className = 'confetti-piece';
-          piece.style.left = Math.random() * 100 + 'vw';
-          piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-          piece.style.width = (Math.random() * 8 + 6) + 'px';
-          piece.style.height = (Math.random() * 8 + 6) + 'px';
-          piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-          piece.style.animationDelay = Math.random() * 0.8 + 's';
-          piece.style.animationDuration = (Math.random() * 1.5 + 1.8) + 's';
-          document.body.appendChild(piece);
-          setTimeout(() => {
-            if (piece.parentNode) piece.parentNode.removeChild(piece);
-          }, 3000);
-        }
-      }
-
-      // ==================== 按键 ====================
-      function handleSpace() {
-        console.log('SPACE pressed, 当前状态:', state);
-
-        if (!musicStarted) {
-          initAudioContext();
-          startBackgroundMusic();
-        }
-
-        if (state === 'WINNER_DISPLAY') return;
-
-        if (state === 'STOPPED') {
-          if (winnerAudio) {
-            winnerAudio.pause();
-            winnerAudio.currentTime = 0;
-          }
-          if (winnerEndTimer) {
-            clearTimeout(winnerEndTimer);
-            winnerEndTimer = null;
-          }
-          finishWinnerDisplay();
-          startRunning();
-          return;
-        }
-
-        if (state === 'IDLE') {
-          startRunning();
-        } else if (state === 'RUNNING') {
-          stopImmediately();
-        }
-      }
-
-      window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-          e.preventDefault();
-          handleSpace();
-        }
-      });
-
-      spaceKey.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleSpace();
-      });
-      mobileDrawBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleSpace();
-      });
-
-      // ==================== 漂浮意象粒子 ====================
-      function createHerbs() {
-        const weightedSymbols = [
-          '🌿','🌿','🌿','🍃','🍃','🌱','❀','✿','☯','🪷','🍂','🌸','🌸',
-          '🫖','🫖','🍵','🍵','🔥','🪵','💨','☕','🧧'
-        ];
-        for (let i = 0; i < 18; i++) {
-          const herb = document.createElement('div');
-          herb.className = 'herb';
-          herb.textContent = weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)];
-          herb.style.left = Math.random() * 100 + 'vw';
-          herb.style.fontSize = (Math.random() * 1.5 + 0.8) + 'rem';
-          herb.style.animationDuration = (Math.random() * 15 + 12) + 's';
-          herb.style.animationDelay = Math.random() * 10 + 's';
-          herbContainer.appendChild(herb);
-        }
-      }
-
-      // ==================== 音乐控制 ====================
-      musicControl.addEventListener('click', () => {
-        musicEnabled = !musicEnabled;
-        if (musicEnabled) {
-          musicIcon.textContent = '🎵';
-          musicText.textContent = '音乐开';
-          musicControl.classList.remove('off');
-          if (state !== 'STOPPED') {
-            startBackgroundMusic();
-          }
-        } else {
-          musicIcon.textContent = '🔇';
-          musicText.textContent = '音乐关';
-          musicControl.classList.add('off');
-          pauseBackgroundMusic();
-        }
-      });
-
-      volumeSlider.addEventListener('input', (e) => {
-        setMusicVolume(e.target.value / 100);
-      });
-
-      // ==================== 启动提示 ====================
-      function hideAudioHint() {
-        audioStartHint.classList.add('hide');
-        initAudioContext();
-        startBackgroundMusic();
-      }
-
-      audioStartHint.addEventListener('click', hideAudioHint);
-      window.addEventListener('keydown', function onFirstKey(e) {
-        if (e.code === 'Space') {
-          hideAudioHint();
-          window.removeEventListener('keydown', onFirstKey);
-        }
-      }, { once: false });
-
-      // ==================== 初始化 ====================
-      function init() {
-        buildTrack();
-        createHerbs();
-        loadUserAudio();
-        state = 'IDLE';
-        console.log('🏮 续命养身市集 · 抽奖系统已就绪');
-        console.log('📁 背景图片: background new.gif');
-        console.log('🎵 背景音乐: music1.mp3');
-        console.log('🎺 中奖音效: music 2.mp3');
-        window.addEventListener('keydown', (e) => {
-          if (e.code === 'Space') e.preventDefault();
-        }, false);
-      }
-
-      init();
-    })();
-  </script>
+      const idSpan = document.createElement('div');
+      idSpan.className = 'prize-id';
+      idSpan.textContent = `第 ${String(prize.id).padStart(2, '0')} 味`;
+
+      card.appendChild(iconSpan);
+      card.appendChild(nameSpan);
+      card.appendChild(idSpan);
+      fragment.appendChild(card);
+    });
+  }
+  prizeTrack.appendChild(fragment);
+  positionX = 0;
+  updateTrackTransform();
+}
+
+function updateTrackTransform() {
+  prizeTrack.style.transform = `translate3d(-${positionX}px, 0, 0)`;
+}
+
+function animate() {
+  if (state !== 'RUNNING') return;
+  positionX += speed;
+  const cards = prizeTrack.children;
+  if (cards.length > 0) {
+    const cardWidth = cards.offsetWidth + parseFloat(window.getComputedStyle(prizeTrack).gap || 0);
+    const oneCycleWidth = cardWidth * prizes.length;
+    if (positionX >= oneCycleWidth) {
+      positionX -= oneCycleWidth;
+    }
+  }
+  updateTrackTransform();
+  animationFrame = requestAnimationFrame(animate);
+}
+
+function startRunning() {
+  if (state === 'RUNNING') return;
+  state = 'RUNNING';
+  winnerLocked = false;
+  winnerOverlay.classList.remove('show');
+  playSfx('whoosh');
+  animate();
+}
+
+function stopImmediately() {
+  if (state !== 'RUNNING') return;
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+  state = 'STOPPED';
+  winnerLocked = true;
+  playSfx('impact');
+
+  const winner = determineWinnerFromPosition();
+  if (winner) {
+    setTimeout(() => {
+      // ⭐ 修改点 3：中奖卡片同样支持 innerHTML 丰富图标展现
+      winnerIcon.innerHTML = winner.prize.icon;
+      winnerName.textContent = winner.prize.name;
+      winnerOverlay.classList.add('show');
+      createConfetti();
+      playWinnerSound();
+    }, 150);
+  }
+}
+
+function determineWinnerFromPosition() {
+  const winningZoneRect = winningZone.getBoundingClientRect();
+  const zoneCenterX = winningZoneRect.left + winningZoneRect.width / 2;
+  const cards = Array.from(prizeTrack.querySelectorAll('.prize-card'));
+  let closestCard = null;
+  let minDistance = Infinity;
+
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const cardCenterX = rect.left + rect.width / 2;
+    const dist = Math.abs(cardCenterX - zoneCenterX);
+    if (dist < minDistance) {
+      minDistance = dist;
+      closestCard = card;
+    }
+  });
+
+  if (!closestCard) return null;
+  const prizeId = parseInt(closestCard.dataset.prizeId, 10);
+  const prize = prizes.find(p => p.id === prizeId) || prizes;
+  return { cardElement: closestCard, prize };
+}
+
+function createConfetti() {
+  const colors = ['#d4af37', '#f5e9d8', '#8b6b3d', '#ffd966', '#c0392b', '#ff6b6b'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.width = (Math.random() * 10 + 6) + 'px';
+    piece.style.height = (Math.random() * 10 + 6) + 'px';
+    piece.style.animationDelay = Math.random() * 0.5 + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 2600);
+  }
+}
+
+function handleSpace() {
+  if (!musicStarted) {
+    hideAudioHint();
+  }
+  if (state === 'IDLE' || state === 'STOPPED') {
+    startRunning();
+  } else if (state === 'RUNNING') {
+    stopImmediately();
+  }
+}
+
+function createHerbs() {
+  const symbols = ['🌿','🍃','🌱','❀','✿','✨','🎈','⭐'];
+  for (let i = 0; i < 15; i++) {
+    const herb = document.createElement('div');
+    herb.className = 'herb';
+    herb.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+    herb.style.left = Math.random() * 100 + 'vw';
+    herb.style.fontSize = (Math.random() * 1.5 + 0.8) + 'rem';
+    herb.style.animationDuration = (Math.random() * 10 + 10) + 's';
+    herbContainer.appendChild(herb);
+  }
+}
+
+function hideAudioHint() {
+  audioStartHint.classList.add('hide');
+  musicStarted = true;
+  initAudioContext();
+  startBackgroundMusic();
+}
+
+audioStartHint.addEventListener('click', hideAudioHint);
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    handleSpace();
+  }
+});
+
+mobileDrawBtn.addEventListener('click', handleSpace);
+
+musicControl.addEventListener('click', () => {
+  musicEnabled = !musicEnabled;
+  if (musicEnabled) {
+    musicIcon.textContent = '🎵';
+    musicText.textContent = '音乐开';
+    startBackgroundMusic();
+  } else {
+    musicIcon.textContent = '🔇';
+    musicText.textContent = '音乐关';
+    pauseBackgroundMusic();
+  }
+});
+
+volumeSlider.addEventListener('input', (e) => {
+  musicVolume = e.target.value / 100;
+  if (bgmAudio) bgmAudio.volume = musicVolume;
+  if (sfxGainNode) sfxGainNode.gain.value = musicVolume;
+});
+
+function init() {
+  buildTrack();
+  createHerbs();
+  loadUserAudio();
+}
+init();
+})();
+</script>
 </body>
 </html>
