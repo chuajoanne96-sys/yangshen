@@ -278,9 +278,9 @@ body {
   gap: clamp(4px, 0.8vh, 10px);
   flex-shrink: 0;
   width: 100%;
+  position: relative;
+  z-index: 500; /* ⭐ 提升层级，确保按钮始终在最上 */
 }
-
-/* ⭐ 统一抽奖按钮（电脑 + 手机通用） */
 .draw-btn {
   background: linear-gradient(180deg, #d4af37 0%, #8b6b3d 100%);
   border: 2px solid #f9e7b3;
@@ -301,10 +301,7 @@ body {
   transform: translateY(4px);
   box-shadow: 0 2px 0 #4a351a, 0 0 30px rgba(212, 175, 55, 0.6);
 }
-.draw-btn:focus {
-  outline: none;
-}
-/* ⭐ 中奖后按钮变成橙色"继续" */
+.draw-btn:focus { outline: none; }
 .draw-btn.continue {
   background: linear-gradient(180deg, #ffb74d 0%, #e65100 100%);
   border-color: #fff3c4;
@@ -315,13 +312,11 @@ body {
   0% { box-shadow: 0 6px 0 #7a3300, 0 0 40px rgba(255, 160, 50, 0.7); }
   100% { box-shadow: 0 6px 0 #7a3300, 0 0 70px rgba(255, 200, 80, 1); }
 }
-/* ⭐ 滚动中按钮变红"停止" */
 .draw-btn.stop {
   background: linear-gradient(180deg, #ef5350 0%, #b71c1c 100%);
   border-color: #ffcdd2;
   box-shadow: 0 6px 0 #5a0e0e, 0 0 50px rgba(239, 83, 80, 0.9);
 }
-
 .space-hint {
   font-size: clamp(0.65rem, 1.3vw, 1.2rem);
   color: #f5e9d8;
@@ -411,7 +406,6 @@ body {
   margin-top: clamp(0.15em, 0.5vh, 0.3em);
   font-weight: 900;
 }
-/* ⭐ 弹窗内的"继续抽奖"按钮 */
 .winner-continue-btn {
   margin-top: clamp(0.6em, 1.5vh, 1em);
   background: linear-gradient(180deg, #d4af37 0%, #8b6b3d 100%);
@@ -515,7 +509,7 @@ body {
   }
 }
 
-/* 手机 */
+/* ⭐ 手机：弹窗改为底部内嵌样式，按钮永远可见 */
 @media (max-width: 640px) {
   .draw-container {
     padding-left: 8px;
@@ -562,16 +556,47 @@ body {
     width: 100%;
     max-width: 320px;
   }
+
+  /* ⭐⭐⭐ 关键：手机上中奖弹窗贴在屏幕下方，不遮挡按钮 */
+  .winner-overlay {
+    inset: auto 0 0 0;   /* 只贴底部 */
+    top: auto;
+    height: auto;
+    max-height: 55vh;
+    padding: 0 8px 12px;
+    align-items: flex-end;
+    justify-content: flex-end;
+    background: transparent; /* 移除全屏遮罩 */
+  }
   .winner-card {
-    max-width: 94vw;
-    padding: 1.2em 1.2em;
+    max-width: 100%;
+    width: 100%;
+    padding: 0.9em 1em;
+    border-radius: 24px 24px 16px 16px;
+    max-height: none;
+    overflow: visible;
   }
   .winner-sub {
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
+    font-size: clamp(0.8rem, 3.5vw, 1.1rem);
+  }
+  .winner-prize-icon .svg-icon {
+    width: clamp(56px, 16vw, 80px);
+    height: clamp(56px, 16vw, 80px);
+  }
+  .winner-prize-name {
+    font-size: clamp(1rem, 5vw, 1.4rem);
   }
   .congrats {
-    letter-spacing: 0.15em;
+    font-size: clamp(0.8rem, 3.5vw, 1.1rem);
+    letter-spacing: 0.1em;
   }
+  .winner-continue-btn {
+    padding: 0.5em 1.6em;
+    font-size: clamp(0.85rem, 3.8vw, 1rem);
+    margin-top: 0.5em;
+  }
+
   .volume-slider {
     display: none;
   }
@@ -643,12 +668,26 @@ body {
   .space-hint {
     font-size: clamp(0.6rem, 1.1vw, 0.85rem);
   }
+  /* 横屏手机时弹窗也贴底部 */
+  .winner-overlay {
+    inset: auto 0 0 0;
+    height: auto;
+    max-height: 60vh;
+    background: transparent;
+    padding: 0 8px 8px;
+    justify-content: flex-end;
+    align-items: flex-end;
+  }
   .winner-card {
-    padding: 1em 1.5em;
+    padding: 0.7em 1.2em;
+    border-radius: 20px 20px 12px 12px;
   }
   .winner-prize-icon .svg-icon {
-    width: clamp(60px, 10vw, 110px);
-    height: clamp(60px, 10vw, 110px);
+    width: 50px;
+    height: 50px;
+  }
+  .winner-prize-name {
+    font-size: 1rem;
   }
 }
 </style>
@@ -685,7 +724,6 @@ body {
   </div>
 
   <div class="space-ui">
-    <!-- ⭐ 统一按钮：电脑和手机都用这个 -->
     <button class="draw-btn" id="drawBtn">🎲 开始抽奖</button>
     <div class="space-hint">按 空格键 也可以抽奖</div>
   </div>
@@ -867,7 +905,6 @@ const musicIcon = document.getElementById('musicIcon');
 const musicText = document.getElementById('musicText');
 const volumeSlider = document.getElementById('volumeSlider');
 
-// ⭐ 统一按钮文案和样式更新
 function updateDrawButton() {
   drawBtn.classList.remove('continue', 'stop');
   if (state === 'IDLE') {
@@ -1235,7 +1272,7 @@ function hideAudioHint() {
 audioStartHint.addEventListener('click', hideAudioHint);
 audioStartHint.addEventListener('touchstart', hideAudioHint, { passive: true });
 
-// ⭐ 空格键
+// 空格键
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') {
     e.preventDefault();
@@ -1243,14 +1280,14 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// ⭐ 统一抽奖按钮（电脑 + 手机）
+// ⭐ 抽奖按钮
 drawBtn.addEventListener('click', handleDrawAction);
 drawBtn.addEventListener('touchstart', (e) => {
   e.preventDefault();
   handleDrawAction();
 }, { passive: false });
 
-// ⭐ 中奖弹窗内的"继续抽奖"按钮
+// ⭐ 弹窗内继续抽奖
 winnerContinueBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   handleDrawAction();
@@ -1260,12 +1297,6 @@ winnerContinueBtn.addEventListener('touchstart', (e) => {
   e.stopPropagation();
   handleDrawAction();
 }, { passive: false });
-
-document.getElementById('winnerCard').addEventListener('click', (e) => {
-  if (e.target.tagName !== 'BUTTON') {
-    handleDrawAction();
-  }
-});
 
 musicControl.addEventListener('click', () => {
   musicEnabled = !musicEnabled;
