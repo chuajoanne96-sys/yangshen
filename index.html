@@ -928,6 +928,9 @@ let musicVolume = 0.3;
 let musicStarted = false;
 let winnerSoundTimer = null;
 
+
+  
+
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let sfxGainNode = null;
@@ -946,23 +949,23 @@ function initAudioContext() {
   }
 }
 
-// function loadUserAudio() {
-//   bgmAudio = new Audio('music1.mp3');
-//   bgmAudio.loop = true;
-//   bgmAudio.volume = musicVolume;
-//   bgmAudio.addEventListener('error', () => { bgmAudio = null; });
+function loadUserAudio() {
+  // bgmAudio = new Audio('music1.mp3');
+  // bgmAudio.loop = true;
+  // bgmAudio.volume = musicVolume;
+  // bgmAudio.addEventListener('error', () => { bgmAudio = null; });
 
-//   winnerAudio = new Audio('music 2.mp3');
-//   winnerAudio.volume = 0.9;
-//   winnerAudio.addEventListener('error', () => { winnerAudio = null; });
-//   winnerAudio.addEventListener('ended', () => {
-//     if (winnerSoundTimer) {
-//       clearTimeout(winnerSoundTimer);
-//       winnerSoundTimer = null;
-//     }
-//     finishWinnerDisplay();
-//   });
-// }
+  winnerAudio = new Audio('music 2.mp3');
+  winnerAudio.volume = 0.9;
+  winnerAudio.addEventListener('error', () => { winnerAudio = null; });
+  winnerAudio.addEventListener('ended', () => {
+    if (winnerSoundTimer) {
+      clearTimeout(winnerSoundTimer);
+      winnerSoundTimer = null;
+    }
+    finishWinnerDisplay();
+  });
+}
 
 function finishWinnerDisplay() {
   if (state !== 'STOPPED') return;
